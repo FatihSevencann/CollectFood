@@ -1,33 +1,45 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 
-public class LevelManager : Instancable<LevelManager>
+namespace Level
 {
-    [SerializeField] GameObject[,] _tObjects;
-    public List<LevelData> _levelDatas;
-
-    public int currentLevel
+    public class LevelManager : Instancable<LevelManager>
     {
-        get => PlayerPrefs.GetInt("currentLevel", 0);
-        private set => PlayerPrefs.SetInt("currentLevel", value);
-    }
-    private GameObject _tileManager;
-    
-    public LevelData CurrentLevelData { get; set; }
+        public List<LevelData> levelDatas;
+        public int CurrentLevel
+        {
+            get => PlayerPrefs.GetInt("currentLevel", 0);
+            private set => PlayerPrefs.SetInt("currentLevel", value);
+        }
+        public LevelData CurrentLevelData { get; set; }
+        
+        private GameObject _tileManager;
+        public UnityAction onLevelLoaded;
 
-    private void Start()
-    {
-        CurrentLevelData = _levelDatas[currentLevel];
-    }
+        private void Start()
+        {
+            CurrentLevelData = levelDatas[CurrentLevel];
+            
+            LoadLevel();
+        }
 
-    void LevelUp()
-    {
-        currentLevel++;
-        CurrentLevelData = _levelDatas[currentLevel];
-    }
+        void LoadLevel()
+        {
+            // Level yukleme islemleri...
+            
+            onLevelLoaded += GridManager.instance.CreateTileSet;
+
+            onLevelLoaded();
+        }
+
+        void LevelUp()
+        {
+            CurrentLevel++;
+            CurrentLevelData = levelDatas[CurrentLevel];
+        }
 
     
     
+    }
 }
