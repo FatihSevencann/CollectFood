@@ -3,9 +3,10 @@ using UnityEngine.UI;
 
     public class TileManager : Instancable<TileManager>
     {
-        [SerializeField] private Sprite[] tileSprites;
+        
         [SerializeField] private Image tileImage;
         
+        public Sprite[] tileSprites;
         public  Vector2Int index;
         public int Item;
         public bool isGroup = false, isDestroy = false;
