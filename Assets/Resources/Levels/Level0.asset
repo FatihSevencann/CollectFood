@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   levelCount: 0
   totalMove: 5
-  size: {x: 4, y: 4}
+  size: {x: 3, y: 3}
   targetObjectives:
   - count: 3
     itemType: 0

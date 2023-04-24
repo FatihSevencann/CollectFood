@@ -53,8 +53,8 @@ public class LineManager : Instancable<LineRenderer>
                 var isSameType = true;
                 for (int i = 0; i < _selectedObjects.Count - 1; i++)
                 {
-                    if (_selectedObjects[i].GetComponent<TileManager>().Item !=
-                        _selectedObjects[i + 1].GetComponent<TileManager>().Item)
+                    if (_selectedObjects[i].GetComponent<TileManager>()._item !=
+                        _selectedObjects[i + 1].GetComponent<TileManager>()._item)
                     {
                         isSameType = false;
                         break;

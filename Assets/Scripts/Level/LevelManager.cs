@@ -34,17 +34,12 @@ namespace Level
             onLevelLoaded();
         }
 
+       
+
         void LevelUp()
         {
             CurrentLevel++;
             CurrentLevelData = levelDatas[CurrentLevel];
-        }
-
-        void MoveLine()
-        {
-           
-
-
         }
     }
 }

@@ -176,6 +176,8 @@ MonoBehaviour:
   tileManager: {fileID: 3021771464579505647, guid: 0942e38ab40284d52b0ed71e4118e777, type: 3}
   spawnParent: {fileID: 196230150}
   gridLayoutGroup: {fileID: 196230152}
+  matchNeighbours: []
+  nextChecks: []
 --- !u!114 &196230152
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -195,7 +197,7 @@ MonoBehaviour:
     m_Bottom: 0
   m_ChildAlignment: 4
   m_StartCorner: 0
-  m_StartAxis: 0
+  m_StartAxis: 1
   m_CellSize: {x: 55, y: 55}
   m_Spacing: {x: 25, y: 25}
   m_Constraint: 1
