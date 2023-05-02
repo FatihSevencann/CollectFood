@@ -11,10 +11,9 @@ public class LineManager : Instancable<LineRenderer>
 {
     [SerializeField] private LineRenderer line;
     [SerializeField] private float lineSegmentLenght = 0.1f;
-    [SerializeField] private List<GameObject> _selectedObjects = new List<GameObject>();
     [SerializeField] private Sprite _selectedTileBackground;
-
-
+    public static List<GameObject> _selectedObjects = new List<GameObject>();
+    
     private void Update()
     {
         if (Input.GetMouseButton(0))
@@ -30,7 +29,6 @@ public class LineManager : Instancable<LineRenderer>
                 {
                     if (result.gameObject.CompareTag("Food"))
                     {
-                        print(result.gameObject.name);
                         GameObject obj = result.gameObject;
                         if (_selectedObjects.Count == 0 || !_selectedObjects.Contains(obj))
                         {
@@ -59,22 +57,19 @@ public class LineManager : Instancable<LineRenderer>
                         isSameType = false;
                         break;
                     }
+                   
                 }
                 if (isSameType)
                 {
-                    print("Success");
-
-                    foreach (GameObject _obj in _selectedObjects)
-                    {
-                        //TODO: Destory these objects
-                    }
+                    // ReSharper disable once Unity.PerformanceCriticalCodeInvocation
+                    GridManager.instance.FindDestroyObjects();
+                  
                 }
                 else
                 {
-                               
+                      print("Unsuccess");         
                 }
             }
-            
             line.positionCount = 0;
             _selectedObjects.Clear();
         }

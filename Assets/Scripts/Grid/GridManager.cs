@@ -4,53 +4,81 @@ using System.Collections.Generic;
 using Level;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 public class GridManager : Instancable<GridManager>
 {
-    [SerializeField] private GameObject tileManager;
-    [SerializeField] private RectTransform spawnParent;
-    [SerializeField] private GridLayoutGroup gridLayoutGroup;
-    private int _gridX, _gridY;
-
+    [SerializeField] private GameObject tilePrefab;
+    [SerializeField] private RectTransform tileParent;
+    [SerializeField] private GridLayoutGroup _gridLayoutGroup;
+    
     private GameObject[,] _tiles;
     private bool _shuffleCheck = false;
 
+    
     public List<GameObject> matchNeighbours = new List<GameObject>();
     public List<GameObject> nextChecks = new List<GameObject>();
 
+   
+
+    public void ResponsiveGrid( )
+    {
+       
+        _gridLayoutGroup.constraintCount = LevelManager.instance.CurrentLevelData.Size.x;
+
+        float cellSize = (float)FindObjectOfType<CanvasScaler>().referenceResolution.x *0.90f /  LevelManager.instance.CurrentLevelData.Size.x;
+
+        _gridLayoutGroup.cellSize = Vector2.one * cellSize;
+    }
+    
+    
+    
     public void CreateTileSet()
     {
-        _gridX = LevelManager.instance.CurrentLevelData.Size.x;
-        _gridY = LevelManager.instance.CurrentLevelData.Size.y;
-        if (LevelManager.instance.CurrentLevelData == null)
-            return;
-
-        _tiles = new GameObject[_gridX, _gridY];
-
-        gridLayoutGroup.constraintCount = _gridX;
-
-        float cellSize = (float)FindObjectOfType<CanvasScaler>().referenceResolution.x * 0.70f / _gridX;
-
-        gridLayoutGroup.cellSize = Vector2.one * cellSize;
         
-
-        for (int i = 0; i < _gridX; i++)
-        {
-            for (int j = 0; j < _gridY; j++)
+        
+            if (LevelManager.instance.CurrentLevelData == null)
             {
-                GameObject tile = Instantiate(tileManager, new Vector3(i, j), quaternion.identity, spawnParent);
-             
-                Vector2Int tileLocalization = new Vector2Int(i, j);
-                tile.GetComponent<TileManager>().SetTile(8, tileLocalization);
-                _tiles[i, j] = tile;
-                tile.SetActive(true);
+                return;
+            }
+            ResponsiveGrid();
+            _tiles = new GameObject[ LevelManager.instance.CurrentLevelData.Size.x,  LevelManager.instance.CurrentLevelData.Size.y];
+            
+            for (int i = 0; i < LevelManager.instance.CurrentLevelData.Size.x; i++)
+            {
+                for (int j = 0; j < LevelManager.instance.CurrentLevelData.Size.y; j++)
+                {
+                    GameObject tile  = Instantiate(tilePrefab,new Vector3(i,j),quaternion.identity, tileParent);
+                    Vector2Int tileLocalization = new Vector2Int(i, j);
+                    tile.GetComponent<TileManager>().SetTile(8, tileLocalization);
+                    _tiles[i, j] = tile;
+                    tile.SetActive(true);
+                }
+            }
+            IsGroupControl();
+        }
+        
+    
+    void IsGroupControl()
+    {
+        _shuffleCheck = true;
+        for (int i = 0; i < 1; i++)
+        {
+            for (int j = 0; j <1 ; j++)
+            {
+                if (!_tiles[i, j].GetComponent<TileManager>().isGroup)
+                {
+
+                    CheckForNeighbours(i, j, _tiles[i, j].GetComponent<TileManager>()._item);
+                }
             }
         }
-
-         IsGroupControl();
+        if (_shuffleCheck)
+        {
+            // Shuffle();
+        }
     }
-
     // void Shuffle()
     // {
     //     for (int i = 0; i < _gridX; i++)
@@ -60,71 +88,31 @@ public class GridManager : Instancable<GridManager>
     //             _tiles[i, j].GetComponent<TileManager>().ChangeItemRandom();
     //         }
     //     }
-    //     
-    //     // IsGroupControl();
+    //     IsGroupControl();
     // }
-
-    void IsGroupControl()
+    Vector2 NextNeighbours(ref int x, ref int y)
     {
-        _shuffleCheck = true;
-        bool flag = false;
-        for (int i = 0; i < 1; i++)
+        if (nextChecks.Count > 0)
         {
-            for (int j = 0; j < 1; j++)
-            {
-                
-                if (!_tiles[i, j].GetComponent<TileManager>().isGroup)
-                {
-                    if (!_shuffleCheck)
-                    {
-                        flag = true;
-                        break;
-                    }
-
-                    CheckForNeighbours(i, j, _tiles[i, j].GetComponent<TileManager>()._item);
-                }
-            }
-    
-            if (flag)
-                break;
+            x = nextChecks[0].GetComponent<TileManager>().index.x;
+            y = nextChecks[0].GetComponent<TileManager>().index.y;
+            nextChecks.RemoveAt(0);
+            return new Vector2(x, y);
         }
-    
-        if (_shuffleCheck)
+        else
         {
-            // matchNeighbours.Clear();
-            // nextChecks.Clear();
-           // Shuffle();
-            
+            if (x + 1 %  LevelManager.instance.CurrentLevelData.Size.x == 0)
+                return new Vector2(0, y + 1);
+            else
+                return new Vector2(x + 1, y);
         }
     }
-
-    // bool NextNeighbours(ref int x, ref int y, int item)
-    // {
-    //     if (nextChecks.Count > 0)
-    //     {
-    //         x = nextChecks[0].GetComponent<TileManager>().index.x;
-    //         y = nextChecks[0].GetComponent<TileManager>().index.y;
-    //         nextChecks.RemoveAt(0);
-    //         return true;
-    //     }
-    //     else
-    //     {
-    //         if (matchNeighbours.Count >= 3)
-    //         {
-    //             _shuffleCheck = false;
-    //         }
-    //
-    //         return false;
-    //     }
-    // }
-
     void NeighboursAdd(GameObject itemFirst, GameObject item)
     {
-        if(!itemFirst.GetComponent<TileManager>().isGroup)
-         matchNeighbours.Add(itemFirst);
-        
+        if (!itemFirst.GetComponent<TileManager>().isGroup)
+            matchNeighbours.Add(itemFirst);
+
         itemFirst.GetComponent<TileManager>().isGroup = true;
-    
         matchNeighbours.Add(item);
         nextChecks.Add(item);
         TileManager tileManager = item.GetComponent<TileManager>();
@@ -147,133 +135,176 @@ public class GridManager : Instancable<GridManager>
             {
                 if (!foundNeighbour && _tiles[x - 1, y].GetComponent<TileManager>()._item == Item)
                 {
-                    NeighboursAdd(_tiles[x, y],_tiles[x - 1, y]);
+                    NeighboursAdd(_tiles[x, y], _tiles[x - 1, y]);
                 }
                 else
                 {
                     _tiles[x - 1, y].GetComponent<TileManager>().ChangeItem(Item);
-                    _shuffleCheck = false;
-                    print("sola girdi");
                     return;
                 }
             }
-    
             //right check
-            if (x < _gridX - 1 && !_tiles[x + 1, y].GetComponent<TileManager>().isGroup)
+            if (x <  LevelManager.instance.CurrentLevelData.Size.x - 1 && !_tiles[x + 1, y].GetComponent<TileManager>().isGroup)
             {
-                if (!foundNeighbour && _tiles[x + 1,y].GetComponent<TileManager>()._item == Item)
+                if (!foundNeighbour && _tiles[x + 1, y].GetComponent<TileManager>()._item == Item)
                 {
-                    NeighboursAdd(_tiles[x, y],_tiles[x + 1, y]);
+                    NeighboursAdd(_tiles[x, y], _tiles[x + 1, y]);
                 }
                 else
                 {
                     _tiles[x + 1, y].GetComponent<TileManager>().ChangeItem(Item);
-                    print( "x" + x+1 + "y"+y +"saga girdi");
-                    _shuffleCheck = false;
                     return;
                 }
             }
             //LeftUp Check
-            if (x > 0 && y > 0 && _tiles[x - 1, y - 1].GetComponent<TileManager>().isGroup == false )
+            if (x > 0 && y < LevelManager.instance.CurrentLevelData.Size.y-1 && !_tiles[x - 1, y + 1].GetComponent<TileManager>().isGroup)
             {
-                if (!foundNeighbour&&_tiles[x - 1, y - 1].GetComponent<TileManager>()._item == Item)
+                if (!foundNeighbour && _tiles[x - 1, y + 1].GetComponent<TileManager>()._item == Item)
+                {
+                    NeighboursAdd(_tiles[x, y], _tiles[x - 1, y + 1]);
+                }
+                else
+                {
+                    _tiles[x - 1, y + 1].GetComponent<TileManager>().ChangeItem(Item);
+                    return;
+                }
+            }
+            //RightUp Check
+            if (x <  LevelManager.instance.CurrentLevelData.Size.x - 1 && y< LevelManager.instance.CurrentLevelData.Size.y-1 && !_tiles[x + 1, y + 1].GetComponent<TileManager>().isGroup)
+            {
+                if (!foundNeighbour && _tiles[x + 1, y + 1].GetComponent<TileManager>()._item == Item)
+                {
+                    NeighboursAdd(_tiles[x, y], _tiles[x + 1, y + 1]);
+                }
+                else
+                {
+                    _tiles[x + 1, y + 1].GetComponent<TileManager>().ChangeItem(Item);
+                    return;
+                }
+            }
+            //LeftDown
+            if (x > 0 && y>0 && !_tiles[x - 1, y - 1].GetComponent<TileManager>().isGroup)
+            {
+                if (!foundNeighbour && _tiles[x - 1, y - 1].GetComponent<TileManager>()._item == Item)
                 {
                     NeighboursAdd(_tiles[x, y], _tiles[x - 1, y - 1]);
                 }
                 else
                 {
                     _tiles[x - 1, y - 1].GetComponent<TileManager>().ChangeItem(Item);
-                    _shuffleCheck = false;
-                    print("solust girdi");
-                    return;
-                }
-            }
-            //RightUp Check
-            if (x < _gridX - 1 && y > 0 && !_tiles[x + 1, y - 1].GetComponent<TileManager>().isGroup)
-            {
-                if (!foundNeighbour && _tiles[x + 1, y - 1].GetComponent<TileManager>()._item == Item)
-                {
-                    NeighboursAdd(_tiles[x, y],_tiles[x + 1, y - 1]);
-                }
-                else
-                {
-                    _tiles[x + 1, y - 1].GetComponent<TileManager>().ChangeItem(Item);
-                    _shuffleCheck = false;
-                    print("sagust girdi");
-                    return;
-                }
-            }
-            //LeftDown
-            if (x > 0 && y < _gridY - 1 && !_tiles[x - 1, y + 1].GetComponent<TileManager>().isGroup)
-            {
-                if (!foundNeighbour && _tiles[x - 1, y + 1].GetComponent<TileManager>()._item == Item)
-                {
-                    NeighboursAdd(_tiles[x, y],_tiles[x - 1, y + 1]);
-                }
-                else
-                {
-                    _tiles[x - 1, y + 1].GetComponent<TileManager>().ChangeItem(Item);
-                    _shuffleCheck = false;
-                    print("sol alt girdi");
                     return;
                 }
             }
             //RightDown
-            if (x < _gridX - 1 && y < _gridY - 1 && !_tiles[x + 1, y + 1].GetComponent<TileManager>().isGroup )
+            if (x <  LevelManager.instance.CurrentLevelData.Size.x - 1 && y>0 && !_tiles[x + 1, y - 1].GetComponent<TileManager>().isGroup)
             {
-                if (!foundNeighbour && _tiles[x + 1, y +1].GetComponent<TileManager>()._item == Item)
+                if (!foundNeighbour && _tiles[x + 1, y - 1].GetComponent<TileManager>()._item == Item)
                 {
-                    NeighboursAdd(_tiles[x, y],_tiles[x + 1, y + 1]);
+                    NeighboursAdd(_tiles[x, y], _tiles[x + 1, y - 1]);
                 }
                 else
                 {
-                    _tiles[x + 1, y + 1].GetComponent<TileManager>().ChangeItem(Item);
-                    _shuffleCheck = false;
-                    print("sag alt girdi");
+                    _tiles[x + 1, y - 1].GetComponent<TileManager>().ChangeItem(Item);
                     return;
                 }
             }
+
             //up check
-            if (y > 0 && !_tiles[x, y - 1].GetComponent<TileManager>().isGroup )
+             if (y < LevelManager.instance.CurrentLevelData.Size.y-1 && !_tiles[x, y + 1].GetComponent<TileManager>().isGroup)
+             {
+                 if (!foundNeighbour && _tiles[x, y + 1].GetComponent<TileManager>()._item == Item)
+                 {
+                     NeighboursAdd(_tiles[x, y], _tiles[x, y + 1]);
+                 }
+                 else
+                 {
+                     _tiles[x, y + 1].GetComponent<TileManager>().ChangeItem(Item);
+                     return;
+                 }
+             }
+
+            //downcheck
+            if (y>0 && !_tiles[x, y - 1].GetComponent<TileManager>().isGroup)
             {
-                if (!foundNeighbour&& _tiles[x, y - 1].GetComponent<TileManager>()._item == Item)
+                if (!foundNeighbour && _tiles[x, y - 1].GetComponent<TileManager>()._item == Item)
                 {
-                    NeighboursAdd(_tiles[x, y],_tiles[x, y - 1]);
+                    NeighboursAdd(_tiles[x, y], _tiles[x, y - 1]);
                 }
                 else
                 {
                     _tiles[x, y - 1].GetComponent<TileManager>().ChangeItem(Item);
-                    _shuffleCheck = false;
-                    print("ust girdi");
                     return;
                 }
             }
-            //downcheck
-            if (y < _gridY - 1 && !_tiles[x, y + 1].GetComponent<TileManager>().isGroup )
+
+            if (!_tiles[x, y].GetComponent<TileManager>().isGroup)
             {
-                if (!foundNeighbour && _tiles[x, y + 1].GetComponent<TileManager>()._item == Item)
-                {
-                    NeighboursAdd(_tiles[x, y],_tiles[x, y + 1]);
-                }
-                else
-                {
-                    _tiles[x, y + 1].GetComponent<TileManager>().ChangeItem(Item);
-                    _shuffleCheck = false;
-                    print("alt girdi");
-                    return;
-                }
+                _tiles[x, y].GetComponent<TileManager>().UpdateSprite();
             }
-            // if (matchNeighbours.Count > 0 && !_tiles[x, y].GetComponent<TileManager>().isGroup)
-            // {
-            //     matchNeighbours.Add(_tiles[x, y]);
-            //     _tiles[x, y].GetComponent<TileManager>().isGroup = true;
-            // }
-            // if (!_tiles[x, y].GetComponent<TileManager>().isGroup)
-            // {
-            //     _tiles[x, y].GetComponent<TileManager>().UpdateSprite();
-            // }
-            //run = NextNeighbours(ref x, ref y, Item);
+
             foundNeighbour = matchNeighbours.Count > 1;
+
+            Vector2 nextVector = NextNeighbours(ref x, ref y);
+            x = (int)nextVector.x;
+            y = (int)nextVector.y;
+            
+            run = matchNeighbours.Count <= 2;
         }
+    }
+
+    public void FindDestroyObjects()
+    {
+        foreach (GameObject gameObject in LineManager._selectedObjects)
+        {
+            Vector2Int destroyIndex = gameObject.GetComponent<TileManager>().index;
+            for (int y = destroyIndex.y; y > 0; y--)
+            {
+                _tiles[destroyIndex.x, y - 1].GetComponent<TileManager>().MoveTileDown();
+            }
+        }
+        foreach (GameObject gameObject in LineManager._selectedObjects)
+        {
+            DestroyTile(gameObject);
+        }
+
+        foreach (GameObject gameObject in _tiles)
+         {
+             gameObject.GetComponent<TileManager>().StartMovingTile();
+         }
+
+        SpawnTiles();
+        RefreshTile();
+    }
+
+    public void AssingTiles(GameObject Tile, Vector2Int index)
+    {
+        _tiles[index.x, index.y] = Tile;
+    }
+
+    public void DestroyTile(GameObject tile)
+    {
+        tile.SetActive(false);
+        SpawnTile.instance.spawnPoints[tile.GetComponent<TileManager>().index.x].GetComponent<Spawner>().AddToSpawnList(tile);
+    }
+
+    public void SpawnTiles()
+    {
+        for (int i = 0; i <  LevelManager.instance.CurrentLevelData.Size.x; i++)
+        {
+            SpawnTile.instance.spawnPoints[i].GetComponent<Spawner>().StartSpawning();
+        }
+    }
+
+    public void RefreshTile()
+    {
+        for (int i = 0; i <  LevelManager.instance.CurrentLevelData.Size.x; i++)
+        {
+            for (int j = 0; j <  LevelManager.instance.CurrentLevelData.Size.y; j++)
+            {
+                _tiles[i, j].GetComponent<TileManager>().isGroup = false;
+            }
+        }
+
+        IsGroupControl();
     }
 }

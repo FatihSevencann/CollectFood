@@ -25,16 +25,13 @@ namespace Level
 
             LoadLevel();
         }
-
         void LoadLevel()
         {
             // Level yukleme islemleri...
-
+            onLevelLoaded += SpawnTile.instance.CreateSpawnManager;
             onLevelLoaded += GridManager.instance.CreateTileSet;
             onLevelLoaded();
         }
-
-       
 
         void LevelUp()
         {
